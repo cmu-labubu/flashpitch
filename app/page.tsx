@@ -8,9 +8,18 @@ export default function Home() {
     "1. Rising global temperatures\n2. Melting polar ice caps\n3. Increased frequency of extreme weather events"
   );
   const [userInput, setUserInput] = useState("");
+  const [polishedText, setPolishedText] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async () => {
+    if (!userInput.trim()) {
+      alert("Please enter some text to polish.");
+      return;
+    }
+
     const data = { topic, examples, userInput };
+    setIsLoading(true);
+    setPolishedText("");
 
     try {
       const response = await fetch("/api/submit", {
@@ -22,14 +31,17 @@ export default function Home() {
       });
 
       if (response.ok) {
-        alert("Submission successful!");
-        setUserInput("");
+        const result = await response.json();
+        setPolishedText(result.data.polishedText);
       } else {
-        alert("Failed to submit. Please try again.");
+        const errorData = await response.json();
+        alert(`Failed to polish text: ${errorData.error || "Please try again."}`);
       }
     } catch (error) {
       console.error("Error submitting data:", error);
       alert("An error occurred. Please try again.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -66,11 +78,21 @@ export default function Home() {
       </div>
 
       <button
-        className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+        className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:bg-gray-400"
         onClick={handleSubmit}
+        disabled={isLoading}
       >
-        Submit
+        {isLoading ? "Polishing..." : "Polish Text"}
       </button>
+
+      {polishedText && (
+        <div className="w-full max-w-md mt-6">
+          <label className="block text-sm font-medium mb-2">Polished Text</label>
+          <div className="w-full p-4 border rounded bg-gray-800 text-white whitespace-pre-wrap shadow-lg">
+            {polishedText}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
